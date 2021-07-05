@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+         <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js" integrity="sha512-iZIBSs+gDyTH0ZhUem9eQ1t4DcEn2B9lHxfRMeGQhyNdSUz+rb+5A3ummX6DQTOIs1XK0gOteOg/LPtSo9VJ+w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style type="text/css">
+	body {
+  background-color: black;
+  font-family: "Helvetica";
+}
+
+h2 {
+  font-size: 18px;
+  padding: 10px 20px;
+  color: #ffffff;
+}
+
+#video-chat-lobby {
+  text-align: center;
+  max-width: 600px;
+  background-color: #141414;
+  margin: 30px auto;
+}
+
+#chat-window {
+  height: 400px;
+  overflow: auto;
+  background: #f9f9f9;
+}
+
+#output p {
+  padding: 14px 0px;
+  margin: 0 20px;
+  border-bottom: 1px solid #e9e9e9;
+  color: #555;
+}
+
+#feedback p {
+  color: #aaa;
+  padding: 14px 0px;
+  margin: 0 20px;
+}
+
+#output strong {
+  color: #000000;
+}
+
+label {
+  box-sizing: border-box;
+  display: block;
+  padding: 10px 20px;
+}
+
+input {
+  padding: 20px;
+  box-sizing: border-box;
+  background: #eee;
+  display: block;
+  width: 100%;
+  background: rgb(255, 253, 253);
+  font-family: Nunito;
+  font-size: 16px;
+}
+
+button {
+  background: #141414;
+  color: #fff;
+  font-size: 18px;
+  padding: 12px 0;
+  width: 100%;
+}
+</style>
+</head>
+<body>
+
+        <div id="video-chat-lobby">
+            <h2 class="text">Video Chat Application</h2>
+            <input id="roomName" type="text" placeholder="Room Name" />
+            <button id="join">Join</button>
+        </div>
+        <div id="video-chat-room">
+            <video id="user-video" muted></video>
+            <video id="peer-video" muted></video>
+        </div>
+
+
+<script type="text/javascript">
+let socket = io("http://localhost:9000");
+let divVideoChatLobby = document.getElementById("video-chat-lobby");
+let divVideoChat = document.getElementById("video-chat-room");
+let joinButton = document.getElementById("join");
+let userVideo = document.getElementById("user-video");
+let peerVideo = document.getElementById("peer-video");
+let roomInput = document.getElementById("roomName");
+let roomName;
+let creator = false;
+let rtcPeerConnection;
+let userStream;
+
+// Contains the stun server URL we will be using.
+let iceServers = {
+  iceServers: [
+    { urls: "stun:stun.services.mozilla.com" },
+    { urls: "stun:stun.l.google.com:19302" },
+  ],
+};
+
+joinButton.addEventListener("click", function () {
+  if (roomInput.value == "") {
+    alert("Please enter a room name");
+  } else {
+    roomName = roomInput.value;
+    socket.emit("join", roomName);
+  }
+});
+
+// Triggered when a room is succesfully created.
+
+socket.on("created", function () {
+  creator = true;
+  console.log("socket room : created :-",roomName)
+  navigator.mediaDevices
+    .getUserMedia({
+      audio: true,
+      video: { width: 1280, height: 720 },
+    })
+    .then(function (stream) {
+      /* use the stream */
+      userStream = stream;
+      divVideoChatLobby.style = "display:none";
+      userVideo.srcObject = stream;
+      userVideo.onloadedmetadata = function (e) {
+        userVideo.play();
+      };
+    })
+    .catch(function (err) {
+      /* handle the error */
+      alert("Couldn't Access User Media");
+    });
+});
+
+// Triggered when a room is succesfully joined.
+
+socket.on("joined", function () {
+  creator = false;
+  console.log("socket room : Joined :-",roomName)
+  navigator.mediaDevices
+    .getUserMedia({
+      audio: true,
+      video: { width: 1280, height: 720 },
+    })
+    .then(function (stream) {
+      /* use the stream */
+      userStream = stream;
+      divVideoChatLobby.style = "display:none";
+      userVideo.srcObject = stream;
+      userVideo.onloadedmetadata = function (e) {
+        userVideo.play();
+      };
+      socket.emit("ready", roomName);
+    })
+    .catch(function (err) {
+      /* handle the error */
+      alert("Couldn't Access User Media");
+    });
+});
+
+// Triggered when a room is full (meaning has 2 people).
+
+socket.on("full", function () {
+  alert("Room is Full, Can't Join");
+});
+
+// Triggered when a peer has joined the room and ready to communicate.
+
+socket.on("ready", function () {
+  console.log("socket room : ready :-",roomName)
+  if (creator) {
+    rtcPeerConnection = new RTCPeerConnection(iceServers);
+    rtcPeerConnection.onicecandidate = OnIceCandidateFunction;
+    rtcPeerConnection.ontrack = OnTrackFunction;
+    console.log(userStream.getTracks()[0],userStream.getTracks()[1])
+    rtcPeerConnection.addTrack(userStream.getTracks()[0], userStream);
+    rtcPeerConnection.addTrack(userStream.getTracks()[1], userStream);
+    rtcPeerConnection
+      .createOffer()
+      .then((offer) => {
+          console.log(`Roomname - ${roomName} : createOffer`)
+
+        rtcPeerConnection.setLocalDescription(offer);
+        socket.emit("offer", offer, roomName);
+      })
+
+      .catch((error) => {
+        console.log(error);
+      });
+  }
+});
+
+// Triggered on receiving an ice candidate from the peer.
+
+socket.on("candidate", function (candidate) {
+  console.log("socket room : created :-",roomName)
+  let icecandidate = new RTCIceCandidate(candidate);
+  rtcPeerConnection.addIceCandidate(icecandidate);
+});
+
+// Triggered on receiving an offer from the person who created the room.
+
+socket.on("offer", function (offer) {
+   console.log("socket room offer :-",roomName)
+  if (!creator) {
+    rtcPeerConnection = new RTCPeerConnection(iceServers);
+    rtcPeerConnection.onicecandidate = OnIceCandidateFunction;
+    rtcPeerConnection.ontrack = OnTrackFunction;
+    rtcPeerConnection.addTrack(userStream.getTracks()[0], userStream);
+    rtcPeerConnection.addTrack(userStream.getTracks()[1], userStream);
+    rtcPeerConnection.setRemoteDescription(offer);
+    rtcPeerConnection
+      .createAnswer()
+      .then((answer) => {
+        console.log(`Roomname - ${roomName} : createAnswer`)
+        rtcPeerConnection.setLocalDescription(answer);
+        socket.emit("answer", answer, roomName);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }
+});
+
+// Triggered on receiving an answer from the person who joined the room.
+
+socket.on("answer", function (answer) {
+  console.log("socket room answer :-",roomName)
+  rtcPeerConnection.setRemoteDescription(answer);
+});
+
+// Implementing the OnIceCandidateFunction which is part of the RTCPeerConnection Interface.
+
+function OnIceCandidateFunction(event) {
+  if (event.candidate) {
+    console.log("RTC OnIceCandidateFunction");
+    socket.emit("candidate", event.candidate, roomName);
+  }
+}
+
+// Implementing the OnTrackFunction which is part of the RTCPeerConnection Interface.
+
+function OnTrackFunction(event) {
+  console.log("RTC OnTrackFunction");
+  peerVideo.srcObject = event.streams[0];
+  peerVideo.onloadedmetadata = function (e) {
+    peerVideo.play();
+  };
+}
+</script>
+</body>
+</html>

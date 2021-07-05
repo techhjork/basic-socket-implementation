@@ -1,0 +1,151 @@
+
+<html>
+<head>
+	<title></title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet">
+   <style type="text/css">
+   	 .cont {
+      min-height: 100vh;
+      width: 100%;
+     }
+     .video{
+      width: 100%;
+      height: 100%;
+      max-width: 400px;
+      max-height: 400px;
+      background: black;
+      border-radius: 20px;
+     }
+     #call,#leave{
+      display: block;
+      width: 50%;
+     }
+   </style>
+</head>
+
+<body>
+  <main>
+  	<div class="cont container d-flex flex-column justify-content-center align-items-center mb-5">
+       <div class="mt-3">
+            <input  type="text" class="form-control" id="room-name" placeholder="room name">
+      </div>
+        <button class="btn btn-primary btn-lg btn-block mt-5" id="call">Call</button>
+        <button class="btn btn-danger btn-lg btn-block mt-5" id="leave">leave The Call</button>
+        
+      <div class="container d-flex flex-md-row  flex-column justify-content-evenly align-items-center">
+
+        <div class="m-5">
+          <h1>Caller</h1>
+          <video muted autoplay="" class="video" id="local-video"></video>
+          <div class="mt-3">
+            <label class="form-label ">Callee Name *</label>
+            <input  type="text" class="form-control" id="calleeId" placeholder="callee Id">
+          </div>
+           <div class="mt-3">
+            <label class="form-label ">Offer</label>
+            <textarea  type="text" class="form-control" id="calleeOffer" placeholder="callee Id"></textarea>
+          </div>
+        </div>
+  		  <div class="m-5">
+        <h1>Callee</h1>
+          <video  muted autoplay="" class="video" id="peer-video">></video>
+           <div class="mt-3">
+            <label class="form-label ">Caller Name</label>
+            <input  type="text" class="form-control" id="callerId" placeholder="callee Id" readonly="">
+          </div>
+           <div class="mt-3">
+            <label class="form-label ">Offer</label>
+            <textarea  type="text" class="form-control" id="calleeOffer" placeholder="callee Id"></textarea>
+          </div>
+        </div>
+      </div>
+  	</div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/adapterjs/0.15.5/adapter.min.js" integrity="sha512-8HaugtT+4c0rhgZIggNCv7I2N0u5OuCXQutD91XdRLqtBl4kD5z2B6QmHczDFMpeENZV060Fip3S954njcfv9A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js" integrity="sha512-iZIBSs+gDyTH0ZhUem9eQ1t4DcEn2B9lHxfRMeGQhyNdSUz+rb+5A3ummX6DQTOIs1XK0gOteOg/LPtSo9VJ+w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script type="text/javascript" src="./assets/index.js"></script>
+</body>
+</html>
+
+<!--
+<!DOCTYPE html>
+<html>
+
+   <head> 
+      <title>WebRTC Video Demo</title>
+      <link rel = "stylesheet" href = "node_modules/bootstrap/dist/css/bootstrap.min.css"/>
+   </head>
+  
+   <style>
+  
+      body { 
+         background: #eee; 
+         padding: 5% 0; 
+      } 
+    
+      video { 
+         background: black; 
+         border: 1px solid gray; 
+      }
+    
+      .call-page { 
+         position: relative; 
+         display: block; 
+         margin: 0 auto; 
+         width: 500px; 
+         height: 500px; 
+      } 
+    
+      #localVideo { 
+         width: 150px; 
+         height: 150px; 
+         position: absolute; 
+         top: 15px; 
+         right: 15px; 
+      }
+    
+      #remoteVideo { 
+         width: 500px; 
+         height: 500px; 
+      }
+    
+   </style>
+  
+   <body>
+  
+   <div id = "loginPage" class = "container text-center"> 
+  
+      <div class = "row"> 
+         <div class = "col-md-4 col-md-offset-4">
+      
+            <h2>WebRTC Video Demo. Please sign in</h2> 
+            <label for = "usernameInput" class = "sr-only">Login</label> 
+            <input type = "email" id = "usernameInput" c
+               lass = "form-control formgroup" placeholder = "Login" 
+               required = "" autofocus = ""> 
+            <button id = "loginBtn" class = "btn btn-lg btn-primary btnblock">
+               Sign in</button>
+        
+         </div> 
+      </div> 
+    
+   </div>
+  
+   <div id = "callPage" class = "call-page"> 
+      <video id = "localVideo" autoplay></video> 
+      <video id = "remoteVideo" autoplay></video>
+    
+      <div class = "row text-center"> 
+         <div class = "col-md-12"> 
+            <input id = "callToUsernameInput" type = "text"
+               placeholder = "username to call" /> 
+            <button id = "callBtn" class = "btn-success btn">Call</button> 
+            <button id = "hangUpBtn" class = "btn-danger btn">Hang Up</button> 
+         </div> 
+      </div> 
+    
+   </div>
+  
+   <script src = "client.js"></script> 
+  
+   </body></html>
